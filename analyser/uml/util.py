@@ -17,3 +17,9 @@ def nl(line):
     """
     return line + '\n'
 
+def enl(line):
+    """
+    Add escaped '\n' to a string. Useful when adding extra information.
+    """
+    return line + '\\n'
+
