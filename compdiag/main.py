@@ -4,7 +4,7 @@ import argparse
 
 from compdiag.diagram.tcp.tcpstate import TCPStateDiagram
 # from compdiag.diagram.dns.dnsstate import DNSStateDiagram
-# from compdiag.diagram.udp.udpstate import UDPStateDiagram
+from compdiag.diagram.udp.udpstate import UDPStateDiagram
 # from compdiag.diagram.http.httpstate import HTTPStateDiagram
 # from compdiag.diagram.http.http2state import HTTP2StateDiagram
 
@@ -30,9 +30,9 @@ class PacketAnalyser():
         #     if diagtype == 'state':
         #         BLEStateDiagram().create_diagram(pkts)
 
-        # elif protocol == 'udp':
-        #     if diagtype == 'state':
-        #         UDPStateDiagram().create_diagram(pkts)
+        elif protocol == 'udp':
+            if diagtype == 'state':
+                UDPStateDiagram().create_diagram(pkts, output_filename='udpdiag')
 
         # elif protocol == 'dns':
         #     if diagtype == 'state':
