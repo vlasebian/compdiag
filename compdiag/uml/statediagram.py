@@ -2,10 +2,14 @@ from compdiag.uml.util import nl
 from compdiag.uml.diagram import UMLDiagram
 
 class UMLStateDiagram(UMLDiagram):
-    ARROW_DIR_DOWN  = ' -down-> '
-    ARROW_DIR_UP    = ' -up-> '
-    ARROW_DIR_LEFT  = ' -left[#blue,dashed]-> '
-    ARROW_DIR_RIGHT = ' -right[#blue,dashed]-> '
+    # ARROW_DIR_DOWN  = ' -down-> '
+    # ARROW_DIR_UP    = ' -up-> '
+    # ARROW_DIR_LEFT  = ' -left[#blue,dashed]-> '
+    # ARROW_DIR_RIGHT = ' -right[#blue,dashed]-> '
+    ARROW_DIR_DOWN  = ' -down[#blue,dashed]-> '
+    ARROW_DIR_UP    = ' -up[#blue,dashed]-> '
+    ARROW_DIR_LEFT  = ' -left-> '
+    ARROW_DIR_RIGHT = ' -right-> '
 
     def __init__(self):
         super().__init__()
