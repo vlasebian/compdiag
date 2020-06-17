@@ -2,13 +2,12 @@ import json
 import pyshark
 import argparse
 
-from compdiag.diagram.tcp.tcpstate import TCPStateDiagram
-from compdiag.diagram.udp.udpstate import UDPStateDiagram
-from compdiag.diagram.dns.dnsstate import DNSStateDiagram
-# from compdiag.diagram.http.httpstate import HTTPStateDiagram
-# from compdiag.diagram.http.http2state import HTTP2StateDiagram
-
-# from compdiag.diagram.ble.blestate import BLEStateDiagram
+from compdiag.diagram.tcp.tcpstate     import TCPStateDiagram
+from compdiag.diagram.udp.udpstate     import UDPStateDiagram
+from compdiag.diagram.dns.dnsstate     import DNSStateDiagram
+from compdiag.diagram.http.httpstate   import HTTPStateDiagram
+from compdiag.diagram.http2.http2state import HTTP2StateDiagram
+from compdiag.diagram.ble.blestate     import BLEStateDiagram
 
 class PacketAnalyser():
 
@@ -26,10 +25,6 @@ class PacketAnalyser():
             if diagtype == 'state':
                 TCPStateDiagram().create_diagram(pkts, output_filename='tcpdiag')
 
-        # elif protocol == 'ble':
-        #     if diagtype == 'state':
-        #         BLEStateDiagram().create_diagram(pkts)
-
         elif protocol == 'udp':
             if diagtype == 'state':
                 UDPStateDiagram().create_diagram(pkts, output_filename='udpdiag')
@@ -38,13 +33,18 @@ class PacketAnalyser():
             if diagtype == 'state':
                 DNSStateDiagram().create_diagram(pkts, output_filename='dnsdiag')
 
-        # elif protocol == 'http':
-        #     if diagtype == 'state':
-        #         HTTPStateDiagram().create_diagram(pkts)
+        elif protocol == 'http':
+            if diagtype == 'state':
+                HTTPStateDiagram().create_diagram(pkts, output_filename='httpdiag')
 
-        # elif protocol == 'http2':
-        #     if diagtype == 'state':
-        #         HTTP2StateDiagram().create_diagram(pkts)
+        elif protocol == 'http2':
+            if diagtype == 'state':
+                HTTP2StateDiagram().create_diagram(pkts, output_filename='http2diag')
+
+        elif protocol == 'ble':
+            if diagtype == 'state':
+                BLEStateDiagram().create_diagram(pkts, output_filename='blediag')
+
         else:
             raise NotImplementedError()
 
@@ -83,7 +83,7 @@ class PacketAnalyser():
 
         args = arg_parser.parse_args()
 
-        # TODO: add the other option too
+        # TODO: add the other options too
         PacketAnalyser.build_diagram(args.file, args.protocol)
 
 

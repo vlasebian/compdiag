@@ -22,6 +22,7 @@ class UMLStateDiagram(UMLDiagram):
             'wrapWidth': '256',
             'maxMessageSize': '256',
             'defaulttextalignment': 'center',
+            #'linetype': 'ortho',
         })
 
     @UMLDiagram.uml_statement

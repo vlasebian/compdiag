@@ -5,7 +5,7 @@ from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.state import State
 from compdiag.diagram.transition import Transition
 
-class DNSStateDiagram():
+class HTTP2StateDiagram():
     def __init__(self):
         self.trx = {}
         self.transitions = []
@@ -14,27 +14,17 @@ class DNSStateDiagram():
         self.dst = None
 
     def update_entities(self, pkt):
-        if 'udp' in pkt:
-            self.src, self.dst = (
-                pkt.ip.src + ':' + pkt.udp.srcport,
-                pkt.ip.dst + ':' + pkt.udp.dstport
-            )
-        if 'tcp' in pkt:
-            self.src, self.dst = (
-                pkt.ip.src + ':' + pkt.tcp.srcport,
-                pkt.ip.dst + ':' + pkt.tcp.dstport
-            )
+        self.src, self.dst = (
+            pkt.exported_pdu.ip_src + ':' + pkt.exported_pdu.src_port,
+            pkt.exported_pdu.ip_dst + ':' + pkt.exported_pdu.dst_port
+        )
     
-    def is_query(self, pkt):
-        return pkt.dns.flags_response == '0'
-
     def create_diagram(self, pkts, output_filename):
-
         init_state = State('START', None, None)
         self.transitions.append(Transition(None, init_state.idx, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         for i, pkt in enumerate(pkts):
-            if 'dns' not in pkt:
+            if 'http2' not in pkt:
                 continue
 
             self.update_entities(pkt)
@@ -48,38 +38,53 @@ class DNSStateDiagram():
                 self.trx[self.dst] = Transciever(self.dst, UMLStateDiagram.ARROW_DIR_LEFT)
                 self.trx[self.dst].states.append(init_state)
 
-            pkt_type = None
+            operation  = 'HTTP2'
             transition = ''
 
-            if self.is_query(pkt):
-                pkt_type = pkt.dns.qry_type.showname.split()[1]
-                transition += pkt.dns.qry_type.showname.split()[1] + '\\n' + pkt.dns.qry_name
+            pkt_type = pkt.http2.type
+
+            if pkt_type == '0':
+                transition = 'DATA'
+                continue
+            elif pkt_type == '1':
+                transition = 'HEADERS'
+
+                if 'headers_method' in pkt.http2.field_names:
+                    transition += ' ' + pkt.http2.headers_method
+
+                if 'headers_path' in pkt.http2.field_names:
+                    transition += ' ' + pkt.http2.headers_path
+
+                if 'headers_status' in pkt.http2.field_names:
+                    transition += ' ' + pkt.http2.headers_status
+
+            elif pkt_type == '4':
+                transition = 'SETTINGS'
+                #continue
+
+            elif pkt_type == '7':
+                transition = 'GOAWAY'
+
+            elif pkt_type == '8':
+                transition = 'WINDOW UPDATE'
 
             else:
-                pkt_type = pkt.dns.resp_type.showname.split()[1]
+                pkt.pretty_print()
+                raise ValueError('HTTP2 packet type not recognized')
 
-                if pkt_type == 'PTR':
-                    transition += pkt.dns.ptr_domain_name
-
-                if pkt_type == 'A':
-                    transition += pkt.dns.a
-
-                if pkt_type == 'SOA':
-                    transition += 'mname: ' + pkt.dns.soa_mname + '\\n' + 'rname: ' + pkt.dns.soa_rname
-
-            payload = str(pkt.dns)
+            payload = str(pkt.http2)
 
             last_src_state = self.trx[self.src].states[-1]
             last_dst_state = self.trx[self.dst].states[-1]
 
             data_sent = self.trx[self.src].get_state(payload)
             if data_sent is None:
-                data_sent = State(self.src, pkt_type + ' sent', payload)
+                data_sent = State(self.src, operation + ' sent', payload)
                 self.trx[self.src].states.append(data_sent)
 
             data_recv = self.trx[self.dst].get_state(payload)
             if data_recv is None:
-                data_recv = State(self.dst, pkt_type + ' recv', payload)
+                data_recv = State(self.dst, operation + ' received', payload)
                 self.trx[self.dst].states.append(data_recv)
 
             # Add transitions between states
