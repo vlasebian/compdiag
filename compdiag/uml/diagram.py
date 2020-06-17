@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from analyser.uml.util import nl
+from compdiag.uml.util import nl
 
 PLANT_UML_JAR = '/usr/local/bin/plantuml.jar'
 

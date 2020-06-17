@@ -7,6 +7,9 @@ class State():
         self.info = info
         self.data = data
 
+        if not self.info:
+            self.info = ''
+
         if self.idx is None:
             self.__assign_idx()
         else:
@@ -17,27 +20,22 @@ class State():
         self.idx = str(State.max_idx)
         State.max_idx += 1
 
-    @property
-    def idx(self):
-        return self.idx
-
-    @property
-    def name(self):
+    def get_name(self):
         #return self.name
         return self.idx + '| ' + self.name
 
-    @property
-    def info(self):
+    def get_info(self):
         return self.info
 
-    @property
-    def data(self):
+    def get_data(self):
         return self.data
 
     def get_dict(self):
         return {
+            'idx' : self.idx,
             'name': self.name,
             'info': self.info,
-            'idx' : self.idx,
         }
+
+    # TODO: implement __str__() method
 

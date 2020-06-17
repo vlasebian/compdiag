@@ -1,7 +1,7 @@
-from analyser.uml.util import nl
-from analyser.uml.base import UMLDiagram
+from compdiag.uml.util import nl
+from compdiag.uml.diagram import UMLDiagram
 
-class StateDiagram(UMLDiagram):
+class UMLStateDiagram(UMLDiagram):
     ARROW_DIR_DOWN  = ' -down-> '
     ARROW_DIR_UP    = ' -up-> '
     ARROW_DIR_LEFT  = ' -left[#blue,dashed]-> '
@@ -20,7 +20,7 @@ class StateDiagram(UMLDiagram):
             'defaulttextalignment': 'center',
         })
 
-    @Diagram.uml_statement
+    @UMLDiagram.uml_statement
     def add_transition(self, src, dst, operation=None, arrow=None):
         if not src and not dst:
             return None 
@@ -38,11 +38,11 @@ class StateDiagram(UMLDiagram):
 
         return transition
 
-    @Diagram.uml_statement
+    @UMLDiagram.uml_statement
     def add_state(self, idx, name):
         return 'state "' + name + '" as ' + idx
 
-    @Diagram.uml_statement
+    @UMLDiagram.uml_statement
     def add_state_data(self, state, note):
         if note:
             return state + ' : ' + note

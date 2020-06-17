@@ -4,7 +4,7 @@ class Transciever():
         self.states = []
         self.arrow  = arrow_dir
 
-    def has_state(self, data):
+    def get_state(self, data):
         for state in self.states:
             if state.data == data:
                 return state
