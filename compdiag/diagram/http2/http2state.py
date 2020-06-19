@@ -1,18 +1,13 @@
 import json
 
 from compdiag.uml.statediagram import UMLStateDiagram
+from compdiag.diagram.basediagram import Diagram
+
 from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.state import State
 from compdiag.diagram.transition import Transition
 
-class HTTP2StateDiagram():
-    def __init__(self):
-        self.trx = {}
-        self.transitions = []
-
-        self.src = None
-        self.dst = None
-
+class HTTP2StateDiagram(Diagram):
     def update_entities(self, pkt):
         self.src, self.dst = (
             pkt.exported_pdu.ip_src + ':' + pkt.exported_pdu.src_port,
@@ -38,7 +33,7 @@ class HTTP2StateDiagram():
                 self.trx[self.dst] = Transciever(self.dst, UMLStateDiagram.ARROW_DIR_LEFT)
                 self.trx[self.dst].states.append(init_state)
 
-            operation  = 'HTTP2'
+            #operation  = 'HTTP2'
             transition = ''
 
             pkt_type = pkt.http2.type
@@ -60,7 +55,7 @@ class HTTP2StateDiagram():
 
             elif pkt_type == '4':
                 transition = 'SETTINGS'
-                #continue
+                continue
 
             elif pkt_type == '7':
                 transition = 'GOAWAY'
@@ -79,12 +74,12 @@ class HTTP2StateDiagram():
 
             data_sent = self.trx[self.src].get_state(payload)
             if data_sent is None:
-                data_sent = State(self.src, operation + ' sent', payload)
+                data_sent = State(self.src, None, payload)
                 self.trx[self.src].states.append(data_sent)
 
             data_recv = self.trx[self.dst].get_state(payload)
             if data_recv is None:
-                data_recv = State(self.dst, operation + ' received', payload)
+                data_recv = State(self.dst, None, payload)
                 self.trx[self.dst].states.append(data_recv)
 
             # Add transitions between states
@@ -112,59 +107,5 @@ class HTTP2StateDiagram():
             for state in entity.states:
                 states.append(state)
 
-        diagram_data = {
-            'states':      [state.get_dict() for state in states],
-            'transitions': [tr.get_dict() for tr in self.transitions],
-        }
-
-        with open(output_filename + '.json', 'w') as f:
-            f.write(json.dumps(diagram_data))
-
+        self.save_diagram_data(states, self.transitions, output_filename)
         self.generate_diagram(states, self.transitions, output_filename)
-
-    def recreate_diagram(self, data, hook, output_filename):
-        raw_states = data['states']
-        raw_transitions = data['transitions']
-
-        states = []
-        transitions = []
-
-        for state in raw_states:
-            old_state = State(
-                state['name'],
-                state['info'],
-                state['data'],
-                state['idx']
-            )
-
-            states.append(old_state)
-
-        for tr in raw_transitions:
-            old_tr = Transition(
-                tr['src_state_id'],
-                tr['dst_state_id'],
-                tr['operation'],
-                tr['arrow'],
-                tr['idx'],
-            )
-
-            transitions.append(old_tr)
-
-        if hook is not None:
-            states, transitions = hook(states, transitions)
-
-        self.generate_diagram(states, transitions, output_filename)
-
-    def generate_diagram(self, states, transitions, output_filename):
-        diagram = UMLStateDiagram()
-
-        for state in states:
-            diagram.add_state(state.idx, state.get_name())
-
-            if state.info != None:
-                diagram.add_state_data(state.idx, state.get_info())
-
-        for tr in transitions:
-            diagram.add_transition(tr.src_state_idx, tr.dst_state_idx, tr.op, tr.arrow)
-
-        diagram.create_diagram(output_filename=output_filename)

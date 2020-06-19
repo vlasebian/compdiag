@@ -1,18 +1,14 @@
-from analyser.uml.statediagram        import UMLStateDiagram
+import json
 
 from compdiag.uml.statediagram import UMLStateDiagram
+from compdiag.diagram.basediagram import Diagram
 from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.state import State
 from compdiag.diagram.transition import Transition
 
-class BLEStateDiagram():
-    def __init__(self):
-        self.trx = {}
-        self.transitions = []
+from compdiag.diagram.ble.bleutils import *
 
-        self.src = None
-        self.dst = None
-
+class BLEStateDiagram(Diagram):
     def update_entities(self, pkt):
         if pkt.hci_h4.direction.showname_value == 'Sent (0x00)':
             self.src = 'localhost()'
@@ -25,18 +21,35 @@ class BLEStateDiagram():
         init_state = State('START', None, None)
         self.transitions.append(Transition(None, init_state.idx, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
-        for i, pkt in enumerate(pkts):
-            if 'ip' not in pkt or 'udp' not in pkt:
-                continue
-
-            self.update_entities(pkt)
-
-            if (self.trx and 
-                    (self.src not in self.trx.keys() or
-                     self.dst not in self.trx.keys())):
+        # Separate packets into requests and responses.
+        requests  = []
+        responses = []
+        
+        for pkt in pkts:
+            if 'btatt' not in pkt:
                 continue
             
+            try:
+                opcode = get_opcode(pkt)
+            except ValueError:
+                continue
+
+            if (opcode == ATTOpcode.MTURequest or
+                opcode == ATTOpcode.MTUResponse or
+                opcode == ATTOpcode.UnknownOpcode):
+                continue
+
+            if 'error_code' in pkt.btatt.field_names:
+                error_code = get_error_opcode(pkt)
+
+            # Skip discovery packets, not relevat in data flow.
+            if (ATTOpcode.isDiscoveryOpcode(opcode) or
+                    (opcode == ATTOpcode.ErrorResponse and
+                    error_code == ATTError.AttributeNotFound)):
+                continue
+
             # Save entity if it does not exist
+            self.update_entities(pkt)
             if self.src not in self.trx.keys():
                 self.trx[self.src] = Transciever(self.src, UMLStateDiagram.ARROW_DIR_RIGHT)
                 self.trx[self.src].states.append(init_state)
@@ -44,54 +57,53 @@ class BLEStateDiagram():
             if self.dst not in self.trx.keys():
                 self.trx[self.dst] = Transciever(self.dst, UMLStateDiagram.ARROW_DIR_LEFT)
                 self.trx[self.dst].states.append(init_state)
-
-    @staticmethod
-    def create_diagram(packets):
-        diagram = StateDiagram()
-
-        # Separate packets into requests and responses.
-        requests  = []
-        responses = []
-        
-        for packet in packets:
-            if 'btatt' not in packet:
-                continue
-            
-            opcode = get_opcode(packet)
-            if 'error_code' in packet.btatt.field_names:
-                error_code = get_error_opcode(packet)
-
-            # Skip discovery packets, not relevat in data flow.
-            if (ATTOpcode.isDiscoveryOpcode(opcode) or
-                    (opcode == ATTOpcode.ErrorResponse and
-                    error_code == ATTError.AttributeNotFound)):
-                continue
             
             if ATTOpcode.isResponse(opcode):
-                responses.append(packet)
+                responses.append(pkt)
             else:
-                requests.append(packet)
-
-        states = []
-        message_count = 0
+                requests.append(pkt)
 
         transition = ''
-        last_state = {}
+        for i, pkt in enumerate(requests):
+            # if 'btatt' not in pkt:
+            #     continue
 
-        # Each request will affect states depending on the response received,
-        # but not every requests gets a response back (e.g. Write Command).
-        for request in requests:
-            opcode = get_opcode(request)
-
-            # Skip MTURequest messages and unknown opcodes.
-            if (opcode == ATTOpcode.MTURequest or
-                opcode == ATTOpcode.UnknownOpcode):
+            try:
+                opcode = get_opcode(pkt)
+            except ValueError:
                 continue
 
-            transition += '**' + str(message_count) + '**' + ' ' + get_operation(request) + '\\n'
-            message_count += 1
+            # # Skip MTU messages and unknown opcodes.
+            # if (opcode == ATTOpcode.MTURequest or
+            #     opcode == ATTOpcode.MTUResponse or
+            #     opcode == ATTOpcode.UnknownOpcode):
+            #     continue
 
-            data = None
+            self.update_entities(pkt)
+
+            # # Save entity if it does not exist
+            # if self.src not in self.trx.keys():
+            #     self.trx[self.src] = Transciever(self.src, UMLStateDiagram.ARROW_DIR_RIGHT)
+            #     self.trx[self.src].states.append(init_state)
+            
+            # if self.dst not in self.trx.keys():
+            #     self.trx[self.dst] = Transciever(self.dst, UMLStateDiagram.ARROW_DIR_LEFT)
+            #     self.trx[self.dst].states.append(init_state)
+
+            # if 'error_code' in pkt.btatt.field_names:
+            #     error_code = get_error_opcode(pkt)
+
+            # # Skip discovery packets, not relevat in data flow.
+            # if (ATTOpcode.isDiscoveryOpcode(opcode) or
+            #         (opcode == ATTOpcode.ErrorResponse and
+            #         error_code == ATTError.AttributeNotFound)):
+            
+            transition += get_operation(pkt) + '\\n'
+            payload = None
+
+            if 'value' in pkt.btatt.field_names: 
+                payload = pkt.btatt.value.replace(':', ' ')
+
             if (opcode == ATTOpcode.WriteRequest or
                 opcode == ATTOpcode.WriteCommand):
                 # A write is only part of the transition, does not create a state.
@@ -100,10 +112,9 @@ class BLEStateDiagram():
             elif (opcode == ATTOpcode.HandleValueNotification or
                 opcode == ATTOpcode.HandleValueIndication):
                 # Asynchronous operation.
-                data = request.btatt.value.replace(':', ' ')
-
+                pass
             else:
-                response = BLEStateDiagram.find_response(responses, request)
+                response = BLEStateDiagram.find_response(responses, pkt)
                 if response is None:
                     continue
 
@@ -112,41 +123,54 @@ class BLEStateDiagram():
                     transition += get_operation(response) + ': ' + get_error_opcode(response).name + '\\n'
                     continue
 
-                if 'value' in response.btatt.field_names: 
-                    data = response.btatt.value.replace(':', ' ')
-                else:
-                    data = None
+            last_src_state = self.trx[self.src].states[-1]
+            last_dst_state = self.trx[self.dst].states[-1]
 
+            data_sent = self.trx[self.src].get_state(payload)
+            if data_sent is None:
+                #data_sent = State(self.src, 'DATA sent', payload)
+                data_sent = State(self.src, None, payload)
+                self.trx[self.src].states.append(data_sent)
 
-            # If state already exists, only add a transition, do not create a new state.
-            old_state = BLEStateDiagram.state_exists(states, data)
-            if old_state is not None:
-                diagram.add_transition(last_state['name'], old_state['name'], transition)
-                last_state = old_state
+            data_recv = self.trx[self.dst].get_state(payload)
+            if data_recv is None:
+                #data_recv = State(self.dst, 'DATA recv', payload)
+                data_recv = State(self.dst, None, payload)
+                self.trx[self.dst].states.append(data_recv)
 
-                transition = ''
-                continue
+            # Add transitions between states
+            self.transitions.append(Transition(last_src_state.idx,
+                                               data_sent.idx,
+                                               None,
+                                               UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(Transition(last_dst_state.idx,
+                                               data_recv.idx,
+                                               None,
+                                               UMLStateDiagram.ARROW_DIR_DOWN))
 
-            # Create a new state if data was not found.
-            new_state = {
-                'name': 'state_' + str(len(states)),
-                'data': data,
-            }
+            if payload:
+                transition += ' '
+                if len(payload) > 20: transition += payload[:24] + '...'
+                else: transition += payload
 
-            if not states:
-                diagram.add_transition('[*]', new_state['name'], transition)
-            else:
-                diagram.add_transition(last_state['name'], new_state['name'], transition)
-
-            if data is not None:
-                diagram.add_state_data(new_state['name'], data)
-
+            # Add message arrow
+            self.transitions.append(Transition(data_sent.idx,
+                                               data_recv.idx,
+                                               transition,
+                                               self.trx[self.src].arrow))
             transition = ''
-            last_state = new_state
 
-            states.append(new_state)
-            
-        diagram.create_diagram(output_filename='blestate')
+        if len(self.trx[self.src].states) and len(self.trx[self.dst].states):
+            self.transitions.append(Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+
+        states = []
+        for entity in self.trx.values():
+            for state in entity.states:
+                states.append(state)
+
+        #self.save_diagram_data(states, self.transitions, output_filename)
+        self.generate_diagram(states, self.transitions, output_filename)
 
     @staticmethod
     def find_response(arr, packet):
@@ -160,7 +184,7 @@ class BLEStateDiagram():
             if int(response.btatt.opcode, 16) == ATTOpcode.MTUResponse:
                 continue
 
-            print(packet.btatt.handle)
+            #print(packet.btatt.handle)
             if response.btatt.handle == packet.btatt.handle:
 
                 if (get_opcode(response) == ATTOpcode.ErrorResponse and
@@ -173,11 +197,4 @@ class BLEStateDiagram():
                     # Response found.
                     return arr.pop(i)
             
-        return None
-
-    @staticmethod
-    def state_exists(states, data):
-        for state in states:
-            if state['data'] == data:
-                return state
         return None

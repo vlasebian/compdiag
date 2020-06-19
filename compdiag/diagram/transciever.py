@@ -6,7 +6,7 @@ class Transciever():
 
     def get_state(self, data):
         for state in self.states:
-            if state.data == data:
+            if state.data == data and data is not None:
                 return state
         return None
 

@@ -21,7 +21,7 @@ class UMLStateDiagram(UMLDiagram):
         self.add_skinparam_options({
             'wrapWidth': '256',
             'maxMessageSize': '256',
-            'defaulttextalignment': 'center',
+            'defaultTextAlignment': 'center',
             #'linetype': 'ortho',
         })
 

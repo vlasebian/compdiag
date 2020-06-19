@@ -1,17 +1,17 @@
 import json
 
 from compdiag.uml.statediagram import UMLStateDiagram
+
+from compdiag.diagram.basediagram import Diagram
 from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.state import State
 from compdiag.diagram.transition import Transition
-
 
 class TCPTransciever(Transciever):
     def __init__(self, idx, arrow_direction):
         super().__init__(idx, arrow_direction)
         self.fin_sent   = False
         self.fin_recv   = False
-
 
 class TCPState(State):
     def __init__(self, name, info, data, flags, seq, ack, idx=None):
@@ -46,68 +46,14 @@ class TCPState(State):
             'ack':   self.ack,
         }
 
-
-class TCPStateDiagram():
-    def __init__(self):
-        self.trx = {}
-        self.transitions = []
-
-        self.src = None
-        self.dst = None
-
+class TCPStateDiagram(Diagram):
     def update_entities(self, packet):
         self.src, self.dst = (
             packet.ip.src + ':' + packet.tcp.srcport,
             packet.ip.dst + ':' + packet.tcp.dstport
         )
-
-    def add_standard_transition(self, new_src_state, new_dst_state, operation, i, check_states=False):
-        last_src_state = self.trx[self.src].states[-1]
-        last_dst_state = self.trx[self.dst].states[-1]
-
-        # Add transitions between states
-        self.transitions.append(Transition(last_src_state.idx, new_src_state.idx, str(i), UMLStateDiagram.ARROW_DIR_DOWN))
-        self.transitions.append(Transition(last_dst_state.idx, new_dst_state.idx, str(i), UMLStateDiagram.ARROW_DIR_DOWN))
-
-        # Add message arrow
-        self.transitions.append(Transition(new_src_state.idx, new_dst_state.idx, operation, self.trx[self.src].arrow))
-
-        if check_states:
-            if self.trx[self.src].get_state(new_src_state.data) is None and not new_src_state is None:
-                self.trx[self.src].states.append(new_src_state)
-            if self.trx[self.dst].get_state(new_dst_state.data) is None and not new_dst_state is None:
-                self.trx[self.dst].states.append(new_dst_state)
-        else:
-            self.trx[self.src].states.append(new_src_state)
-            self.trx[self.dst].states.append(new_dst_state)
-
-    def get_flags(self, packet):
-        flags = []
-
-        if ('flags_syn' in packet.tcp.field_names and
-            packet.tcp.flags_syn.int_value == 1):
-            flags.append('SYN')
-
-        if ('flags_ack' in packet.tcp.field_names and
-            packet.tcp.flags_ack.int_value == 1):
-            flags.append('ACK')
-
-        if ('flags_fin' in packet.tcp.field_names and
-            packet.tcp.flags_fin.int_value == 1):
-            flags.append('FIN')
-
-        if ('flags_push' in packet.tcp.field_names and
-            packet.tcp.flags_push.int_value == 1):
-            flags.append('PSH')
-
-        if ('flags_rst' in packet.tcp.field_names and
-            packet.tcp.flags_rst.int_value == 1):
-            flags.append('RST')
-
-        return flags
-
-    def create_diagram(self, pkts, output_filename='tcpstate'):
-        closed_state = State('CLOSED', None, None)
+    def create_diagram(self, pkts, output_filename):
+        closed_state = State('START', None, None)
         self.transitions.append(Transition(None, closed_state.idx, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         for i, pkt in enumerate(pkts):
@@ -147,7 +93,7 @@ class TCPStateDiagram():
                 continue
 
             elif 'ACK' in flags and int(pkt.tcp.len) != 0:
-                # application data
+                # Application data
                 payload = pkt.tcp.payload
 
                 data_sent = self.trx[self.src].get_state(payload)
@@ -215,14 +161,7 @@ class TCPStateDiagram():
             for state in entity.states:
                 states.append(state)
 
-        diagram_data = {
-            'states':      [state.get_dict() for state in states],
-            'transitions': [tr.get_dict() for tr in self.transitions],
-        }
-
-        with open(output_filename + '.json', 'w') as f:
-            f.write(json.dumps(diagram_data))
-
+        self.save_diagram_data(states, self.transitions, output_filename)
         self.generate_diagram(states, self.transitions, output_filename)
 
     def recreate_diagram(self, data, hook, output_filename):
@@ -261,17 +200,48 @@ class TCPStateDiagram():
 
         self.generate_diagram(states, transitions, output_filename)
 
-    def generate_diagram(self, states, transitions, output_filename):
-        diagram = UMLStateDiagram()
+    def add_standard_transition(self, new_src_state, new_dst_state, operation, i, check_states=False):
+        last_src_state = self.trx[self.src].states[-1]
+        last_dst_state = self.trx[self.dst].states[-1]
 
-        for state in states:
-            diagram.add_state(state.idx, state.get_name())
+        # Add transitions between states
+        self.transitions.append(Transition(last_src_state.idx, new_src_state.idx, str(i), UMLStateDiagram.ARROW_DIR_DOWN))
+        self.transitions.append(Transition(last_dst_state.idx, new_dst_state.idx, str(i), UMLStateDiagram.ARROW_DIR_DOWN))
 
-            if state.info != None:
-                diagram.add_state_data(state.idx, state.get_info())
+        # Add message arrow
+        self.transitions.append(Transition(new_src_state.idx, new_dst_state.idx, operation, self.trx[self.src].arrow))
 
-        for tr in transitions:
-            diagram.add_transition(tr.src_state_idx, tr.dst_state_idx, tr.op, tr.arrow)
+        if check_states:
+            if self.trx[self.src].get_state(new_src_state.data) is None and not new_src_state is None:
+                self.trx[self.src].states.append(new_src_state)
+            if self.trx[self.dst].get_state(new_dst_state.data) is None and not new_dst_state is None:
+                self.trx[self.dst].states.append(new_dst_state)
+        else:
+            self.trx[self.src].states.append(new_src_state)
+            self.trx[self.dst].states.append(new_dst_state)
 
-        diagram.create_diagram(output_filename=output_filename)
+    def get_flags(self, packet):
+        flags = []
+
+        if ('flags_syn' in packet.tcp.field_names and
+            packet.tcp.flags_syn.int_value == 1):
+            flags.append('SYN')
+
+        if ('flags_ack' in packet.tcp.field_names and
+            packet.tcp.flags_ack.int_value == 1):
+            flags.append('ACK')
+
+        if ('flags_fin' in packet.tcp.field_names and
+            packet.tcp.flags_fin.int_value == 1):
+            flags.append('FIN')
+
+        if ('flags_push' in packet.tcp.field_names and
+            packet.tcp.flags_push.int_value == 1):
+            flags.append('PSH')
+
+        if ('flags_rst' in packet.tcp.field_names and
+            packet.tcp.flags_rst.int_value == 1):
+            flags.append('RST')
+
+        return flags
 
