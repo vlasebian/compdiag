@@ -2,6 +2,7 @@ import json
 import argparse
 import pyshark
 
+from compdiag.diagram.basediagram      import Diagram
 from compdiag.diagram.tcp.tcpstate     import TCPStateDiagram
 from compdiag.diagram.udp.udpstate     import UDPStateDiagram
 from compdiag.diagram.dns.dnsstate     import DNSStateDiagram
@@ -52,17 +53,11 @@ class Compdiag():
             raise NotImplementedError()
 
     @staticmethod
-    def rebuild_diagram(file, protocol, type='state', modifier=None, output_filename='reconsdiag'):
-        raw_data = open(file, 'r')
+    def rebuild_diagram(file, modifier=None, output_filename='reconsdiag'):
+        raw_data = open(file, 'r').read()
+
         data = json.loads(raw_data)
-
-        if type == 'state':
-            if protocol == 'tcp':
-                TCPStateDiagram().recreate_diagram(data, modifier, output_filename)
-                return
-
-        else:
-            raise NotImplementedError()
+        Diagram().recreate_diagram(data, modifier, output_filename)
 
     @staticmethod
     def cli():

@@ -49,14 +49,27 @@ class DNSStateDiagram(Diagram):
             else:
                 pkt_type = pkt.dns.resp_type.showname.split()[1]
 
-                if pkt_type == 'PTR':
-                    transition += pkt.dns.ptr_domain_name
-
                 if pkt_type == 'A':
                     transition += pkt.dns.a
 
+                if pkt_type == 'NS':
+                    pass #TODO
+
+                if pkt_type == 'AAAA':
+                    pass #TODO
+
+                if pkt_type == 'CNAME':
+                    pass #TODO
+
+                if pkt_type == 'MX':
+                    pass #TODO
+
                 if pkt_type == 'SOA':
                     transition += 'mname: ' + pkt.dns.soa_mname + '\\n' + 'rname: ' + pkt.dns.soa_rname
+
+                if pkt_type == 'PTR':
+                    transition += pkt.dns.ptr_domain_name
+
 
             payload = str(pkt.dns)
 

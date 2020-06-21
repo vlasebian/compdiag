@@ -13,8 +13,8 @@ class State():
         if self.idx is None:
             self.__assign_idx()
         else:
-            if int(self.idx) > max_idx:
-                max_idx = int(self.idx)
+            if int(self.idx) > State.max_idx:
+                State.max_idx = int(self.idx)
 
     def __assign_idx(self):
         self.idx = str(State.max_idx)
@@ -35,6 +35,7 @@ class State():
             'idx' : self.idx,
             'name': self.name,
             'info': self.info,
+            'data': self.data,
         }
 
     # TODO: implement __str__() method

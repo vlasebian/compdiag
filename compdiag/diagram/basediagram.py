@@ -18,15 +18,6 @@ class Diagram():
     def create_diagram(self, pkts, output_filename):
         raise NotImplementedError()
 
-    def save_diagram_data(self, states, transitions, output_filename):
-        diagram_data = {
-            'states':      [state.get_dict() for state in states],
-            'transitions': [tr.get_dict() for tr in self.transitions],
-        }
-
-        with open(output_filename + '.json', 'w') as f:
-            f.write(json.dumps(diagram_data))
-
     def recreate_diagram(self, data, hook, output_filename):
         raw_states = data['states']
         raw_transitions = data['transitions']
@@ -46,8 +37,8 @@ class Diagram():
 
         for tr in raw_transitions:
             old_tr = Transition(
-                tr['src_state_id'],
-                tr['dst_state_id'],
+                tr['src_state_idx'],
+                tr['dst_state_idx'],
                 tr['operation'],
                 tr['arrow'],
                 tr['idx'],
@@ -59,6 +50,15 @@ class Diagram():
             states, transitions = hook(states, transitions)
 
         self.generate_diagram(states, transitions, output_filename)
+
+    def save_diagram_data(self, states, transitions, output_filename):
+        diagram_data = {
+            'states':      [state.get_dict() for state in states],
+            'transitions': [tr.get_dict() for tr in transitions],
+        }
+
+        with open(output_filename + '.json', 'w') as f:
+            f.write(json.dumps(diagram_data))
 
     def generate_diagram(self, states, transitions, output_filename):
         diagram = UMLStateDiagram()
@@ -75,4 +75,46 @@ class Diagram():
         diagram.create_diagram(output_filename=output_filename)
 
 class Reconstruct():
-    pass
+    ARR_DOWN  = UMLStateDiagram.ARROW_DIR_DOWN
+    ARR_UP    = UMLStateDiagram.ARROW_DIR_UP
+    ARR_LEFT  = UMLStateDiagram.ARROW_DIR_LEFT
+    ARR_RIGHT = UMLStateDiagram.ARROW_DIR_RIGHT
+
+    @staticmethod
+    def remove_states(state_no, states, transitions):
+        # FIXME
+        for no in state_no:
+            state_id = str(no)
+
+            transitions = list(filter(lambda transition:
+                transition.src_state_idx != state_id and
+                transition.dst_state_idx != state_id, transitions))
+
+            states = list(filter(lambda state: state.idx != state_id, states))
+        
+        return states, transitions
+
+    @staticmethod
+    def get_state(state_no, states):
+        for state in states:
+            if state.idx == str(state_no):
+                return state
+        return None
+
+    @staticmethod
+    def unify_states(final_state_no, state_no, states, transitions):
+        final_state = Reconstruct.get_state(final_state_no, states)
+
+        for no in state_no:
+            state = Reconstruct.get_state(no, states)
+            final_state.info += '\\n' + state.info
+
+        states, transitions = Reconstruct.remove_states(state_no, states, transitions)
+
+        return states, transitions
+
+#### Reconstruct example
+def simple_modifier(states, transitions):
+    states, transitions = Reconstruct.remove_states(range(10, 40), states, transitions)
+
+    return states, transitions
