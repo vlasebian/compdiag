@@ -2,15 +2,25 @@ import json
 import argparse
 import pyshark
 
-from compdiag.diagram.basediagram      import Diagram
-from compdiag.diagram.tcp.tcpstate     import TCPStateDiagram
-from compdiag.diagram.udp.udpstate     import UDPStateDiagram
-from compdiag.diagram.dns.dnsstate     import DNSStateDiagram
-from compdiag.diagram.http.httpstate   import HTTPStateDiagram
+from compdiag.diagram.basediagram import recreate_diagram
+from compdiag.diagram.tcp.tcpstate import TCPStateDiagram
+from compdiag.diagram.udp.udpstate import UDPStateDiagram
+from compdiag.diagram.dns.dnsstate import DNSStateDiagram
+from compdiag.diagram.http.httpstate import HTTPStateDiagram
 from compdiag.diagram.http2.http2state import HTTP2StateDiagram
-from compdiag.diagram.ble.blestate     import BLEStateDiagram
+from compdiag.diagram.ble.blestate import BLEStateDiagram
+from compdiag.reply.reply import Reply
 
-class Compdiag():
+
+class Compdiag:
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def reply(protocol, filename, iface):
+        # TODO: launch a second thread that captures packets, then generate diagram from result packet capture
+        Reply(iface, protocol, filename).listen()
 
     @staticmethod
     def pkt_parser(file, display_filter=None):
@@ -19,35 +29,29 @@ class Compdiag():
         return pyshark.FileCapture(file)
 
     @staticmethod
-    def build_diagram(file, protocol, output_filename=None, display_filter=None, diagtype='state'):
+    def build_diagram(file, protocol, output_filename=None, display_filter=None):
         pkts = Compdiag.pkt_parser(file, display_filter)
 
         if not output_filename:
             output_filename = protocol + 'diag'
 
         if protocol == 'tcp':
-            if diagtype == 'state':
-                TCPStateDiagram().create_diagram(pkts, output_filename)
+            TCPStateDiagram().create_diagram(pkts, output_filename)
 
         elif protocol == 'udp':
-            if diagtype == 'state':
-                UDPStateDiagram().create_diagram(pkts, output_filename)
+            UDPStateDiagram().create_diagram(pkts, output_filename)
 
         elif protocol == 'dns':
-            if diagtype == 'state':
-                DNSStateDiagram().create_diagram(pkts, output_filename)
+            DNSStateDiagram().create_diagram(pkts, output_filename)
 
         elif protocol == 'http':
-            if diagtype == 'state':
-                HTTPStateDiagram().create_diagram(pkts, output_filename)
+            HTTPStateDiagram().create_diagram(pkts, output_filename)
 
         elif protocol == 'http2':
-            if diagtype == 'state':
-                HTTP2StateDiagram().create_diagram(pkts, output_filename)
+            HTTP2StateDiagram().create_diagram(pkts, output_filename)
 
         elif protocol == 'ble':
-            if diagtype == 'state':
-                BLEStateDiagram().create_diagram(pkts, output_filename)
+            BLEStateDiagram().create_diagram(pkts, output_filename)
 
         else:
             raise NotImplementedError()
@@ -57,32 +61,36 @@ class Compdiag():
         raw_data = open(file, 'r').read()
 
         data = json.loads(raw_data)
-        Diagram().recreate_diagram(data, modifier, output_filename)
+        recreate_diagram(data, modifier, output_filename)
 
     @staticmethod
     def cli():
         arg_parser = argparse.ArgumentParser(description='Packet capture analysis framework.')
 
         arg_parser.add_argument(
-                '--diagram_type', metavar='type', type=str,
-                help='type of diagram to be generated from capture file, default is state diagram',
-                default= 'state',
-                choices=['state', 'sequence'])
+            '--filter', metavar='filter', type=str,
+            help='Display filter used on captures when parsing the file, same format as tshark.')
         arg_parser.add_argument(
-                '--filter', metavar='filter', type=str,
-                help='display filter used on captures when parsing the file, same format as tshark')
+            '--reply', metavar='reply', type=bool, default=False,
+            help='Use the packet capture to build replies, and listen for incoming packets.')
         arg_parser.add_argument(
-                'protocol', metavar='protocol', type=str,
-                help='transmission protocol used in the given capture file',
-                choices=['ble', 'tcp', 'udp', 'dns', 'http', 'http2'])
+            '--iface', metavar='iface', type=str, default='lo',
+            help='Interface where replies are sent. To be used only with --reply option.')
         arg_parser.add_argument(
-                'file', metavar='capture_file', type=str,
-                help='pcap or pcapng file containing packet captures')
+            'protocol', metavar='protocol', type=str,
+            help='Protocol used in the given capture file.',
+            choices=['ble', 'tcp', 'udp', 'dns', 'http', 'http2'])
+        arg_parser.add_argument(
+            'file', metavar='capture_file', type=str,
+            help='Pcap or PcapNg file containing packet captures.')
 
         args = arg_parser.parse_args()
-
         # TODO: add the other options too
-        Compdiag.build_diagram(args.file, args.protocol)
+        if args.reply:
+            Compdiag.reply(args.protocol, args.file, args.iface)
+        else:
+            # TODO: add interface parameter
+            Compdiag.build_diagram(args.file, args.protocol)
 
 
 if __name__ == '__main__':

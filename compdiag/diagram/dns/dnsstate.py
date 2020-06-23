@@ -44,32 +44,25 @@ class DNSStateDiagram(Diagram):
 
             if self.is_query(pkt):
                 pkt_type = pkt.dns.qry_type.showname.split()[1]
-                transition += pkt.dns.qry_type.showname.split()[1] + '\\n' + pkt.dns.qry_name
+                transition += pkt.dns.qry_type.showname.split()[1] + ' ' + pkt.dns.qry_name
 
             else:
                 pkt_type = pkt.dns.resp_type.showname.split()[1]
 
-                if pkt_type == 'A':
-                    transition += pkt.dns.a
+                if 'a' in pkt.dns.field_names:
+                    transition += 'A ' + pkt.dns.a + '\\n'
 
-                if pkt_type == 'NS':
-                    pass #TODO
+                if 'ns' in pkt.dns.field_names:
+                    transition += 'NS ' + pkt.dns.ns + '\\n'
 
-                if pkt_type == 'AAAA':
-                    pass #TODO
+                if 'soa_mname' in pkt.dns.field_names:
+                    transition += 'SOA MNAME ' + pkt.dns.soa_mname + '\\n'
 
-                if pkt_type == 'CNAME':
-                    pass #TODO
+                if 'soa_rname' in pkt.dns.field_names:
+                    transition += 'SOA RNAME ' + pkt.dns.soa_rname + '\\n'
 
-                if pkt_type == 'MX':
-                    pass #TODO
-
-                if pkt_type == 'SOA':
-                    transition += 'mname: ' + pkt.dns.soa_mname + '\\n' + 'rname: ' + pkt.dns.soa_rname
-
-                if pkt_type == 'PTR':
+                if 'ptr_domain_name' in pkt.dns.field_names:
                     transition += pkt.dns.ptr_domain_name
-
 
             payload = str(pkt.dns)
 
@@ -111,8 +104,8 @@ class DNSStateDiagram(Diagram):
             for state in entity.states:
                 states.append(state)
 
-        self.save_diagram_data(states, self.transitions, output_filename)
-        self.generate_diagram(states, self.transitions, output_filename)
+        save_diagram_data(states, self.transitions, output_filename)
+        generate_diagram(states, self.transitions, output_filename)
     
     def is_query(self, pkt):
         return pkt.dns.flags_response == '0'

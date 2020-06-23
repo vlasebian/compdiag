@@ -9,10 +9,16 @@ from compdiag.diagram.transition import Transition
 
 class HTTPStateDiagram(Diagram):
     def update_entities(self, pkt):
-        self.src, self.dst = (
-            pkt.ip.src + ':' + pkt.tcp.srcport,
-            pkt.ip.dst + ':' + pkt.tcp.dstport
-        )
+        if 'ip' in pkt:
+            self.src, self.dst = (
+                pkt.ip.src + ':' + pkt.tcp.srcport,
+                pkt.ip.dst + ':' + pkt.tcp.dstport
+            )
+        elif 'ipv6' in pkt:
+            self.src, self.dst = (
+                pkt.ipv6.src + ':' + pkt.tcp.srcport,
+                pkt.ipv6.dst + ':' + pkt.tcp.dstport
+            )
     
     def create_diagram(self, pkts, output_filename):
         init_state = State('START', None, None)
@@ -88,5 +94,5 @@ class HTTPStateDiagram(Diagram):
             for state in entity.states:
                 states.append(state)
 
-        self.save_diagram_data(states, self.transitions, output_filename)
-        self.generate_diagram(states, self.transitions, output_filename)
+        save_diagram_data(states, self.transitions, output_filename)
+        generate_diagram(states, self.transitions, output_filename)

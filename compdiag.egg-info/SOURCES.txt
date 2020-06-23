@@ -6,12 +6,11 @@ compdiag.egg-info/SOURCES.txt
 compdiag.egg-info/dependency_links.txt
 compdiag.egg-info/top_level.txt
 compdiag/diagram/__init__.py
-compdiag/diagram/reconstruct.py
+compdiag/diagram/basediagram.py
 compdiag/diagram/state.py
 compdiag/diagram/transciever.py
 compdiag/diagram/transition.py
 compdiag/diagram/util.py
-compdiag/diagram/tcp/__init__.py
 compdiag/diagram/tcp/tcpstate.py
 compdiag/uml/__init__.py
 compdiag/uml/diagram.py

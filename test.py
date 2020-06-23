@@ -18,11 +18,11 @@ DIRECTORIES = [
         #HUE_BLE_PCAP_DIR,
         #DS4_BLE_PCAP_DIR,
         #DS4_HTTP2_PCAP_DIR,
-        UDP_PCAP_DIR,
-        TCP_PCAP_DIR,
-        DNS_PCAP_DIR,
+        #UDP_PCAP_DIR,
+        #TCP_PCAP_DIR,
+        #DNS_PCAP_DIR,
         HTTP_PCAP_DIR,
-        HTTP2_PCAP_DIR,
+        #HTTP2_PCAP_DIR,
     ]
 
 

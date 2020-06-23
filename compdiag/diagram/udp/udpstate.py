@@ -87,5 +87,5 @@ class UDPStateDiagram(Diagram):
             for state in entity.states:
                 states.append(state)
 
-        self.save_diagram_data(states, self.transitions, output_filename)
-        self.generate_diagram(states, self.transitions, output_filename)
+        save_diagram_data(states, self.transitions, output_filename)
+        generate_diagram(states, self.transitions, output_filename)
