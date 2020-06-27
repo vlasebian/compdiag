@@ -127,6 +127,6 @@ class UMLDiagram():
         if ret.returncode != 0:
             return False
 
-        with open(output_filename + '.' + output_format, 'wb') as f:
+        with open(output_filename[:output_filename.rfind('.')] + '.' + output_format, 'wb') as f:
             f.write(ret.stdout)
 

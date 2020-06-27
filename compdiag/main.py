@@ -3,7 +3,9 @@ import argparse
 import pyshark
 
 from compdiag.diagram.basediagram import recreate_diagram
+from compdiag.diagram.state import State
 from compdiag.diagram.tcp.tcpstate import TCPStateDiagram
+from compdiag.diagram.transition import Transition
 from compdiag.diagram.udp.udpstate import UDPStateDiagram
 from compdiag.diagram.dns.dnsstate import DNSStateDiagram
 from compdiag.diagram.http.httpstate import HTTPStateDiagram
@@ -55,6 +57,10 @@ class Compdiag:
 
         else:
             raise NotImplementedError()
+
+        pkts.close()
+        State.reset_idx()
+        Transition.reset_idx()
 
     @staticmethod
     def rebuild_diagram(file, modifier=None, output_filename='reconsdiag'):

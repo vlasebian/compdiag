@@ -11,7 +11,7 @@ def save_diagram_data(states, transitions, output_filename):
         'transitions': [tr.get_dict() for tr in transitions],
     }
 
-    with open(output_filename + '.json', 'w') as f:
+    with open(output_filename[:output_filename.rfind('.')] + '.json', 'w') as f:
         f.write(json.dumps(diagram_data))
 
 
@@ -72,8 +72,33 @@ class Diagram:
         self.src = None
         self.dst = None
 
-    def update_entities(self):
-        raise NotImplementedError()
+    def update_entities(self, pkt):
+        if 'exported_pdu' in pkt:
+            self.src, self.dst = (
+                pkt.exported_pdu.ip_src + ':' + pkt.exported_pdu.src_port,
+                pkt.exported_pdu.ip_dst + ':' + pkt.exported_pdu.dst_port
+            )
+            return
+
+        if 'ip' in pkt:
+            srcip = pkt.ip.src
+            dstip = pkt.ip.dst
+        elif 'ipv6' in pkt:
+            srcip = pkt.ipv6.src
+            dstip = pkt.ipv6.dst
+        else:
+            raise ValueError('No IP layer found in packet when updating entities.')
+
+        if 'udp' in pkt:
+            self.src, self.dst = (
+                srcip + ':' + pkt.udp.srcport,
+                dstip + ':' + pkt.udp.dstport
+            )
+        elif 'tcp' in pkt:
+            self.src, self.dst = (
+                srcip + ':' + pkt.tcp.srcport,
+                dstip + ':' + pkt.tcp.dstport
+            )
 
     def create_diagram(self, pkts, output_filename):
         raise NotImplementedError()

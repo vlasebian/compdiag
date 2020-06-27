@@ -1,19 +1,13 @@
 import json
 
 from compdiag.uml.statediagram import UMLStateDiagram
-from compdiag.diagram.basediagram import Diagram
+from compdiag.diagram.basediagram import Diagram, generate_diagram, save_diagram_data
 
 from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.state import State
 from compdiag.diagram.transition import Transition
 
 class UDPStateDiagram(Diagram):
-    def update_entities(self, packet):
-        self.src, self.dst = (
-            packet.ip.src + ':' + packet.udp.srcport,
-            packet.ip.dst + ':' + packet.udp.dstport
-        )
-
     def create_diagram(self, pkts, output_filename):
 
         init_state = State('START', None, None)
@@ -65,11 +59,11 @@ class UDPStateDiagram(Diagram):
             # Add transitions between states
             self.transitions.append(Transition(last_src_state.idx,
                                                data_sent.idx,
-                                               str(i),
+                                               None,
                                                UMLStateDiagram.ARROW_DIR_DOWN))
             self.transitions.append(Transition(last_dst_state.idx,
                                                data_recv.idx,
-                                               str(i),
+                                               None,
                                                UMLStateDiagram.ARROW_DIR_DOWN))
 
             # Add message arrow
@@ -79,8 +73,8 @@ class UDPStateDiagram(Diagram):
                                                self.trx[self.src].arrow))
 
         if len(self.trx[self.src].states) and len(self.trx[self.dst].states):
-            self.transitions.append(Transition(self.trx[self.src].states[-1].idx, None, str(i), UMLStateDiagram.ARROW_DIR_DOWN))
-            self.transitions.append(Transition(self.trx[self.dst].states[-1].idx, None, str(i), UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         states = []
         for entity in self.trx.values():

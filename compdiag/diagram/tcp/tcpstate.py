@@ -1,5 +1,4 @@
-from compdiag.diagram.basediagram import Diagram
-from compdiag.uml.statediagram import UMLStateDiagram
+from compdiag.diagram.basediagram import Diagram, save_diagram_data, generate_diagram
 
 from compdiag.diagram.state import State
 from compdiag.diagram.transciever import Transciever
@@ -52,17 +51,14 @@ class TCPState(State):
 
 
 class TCPStateDiagram(Diagram):
-    def update_entities(self, packet):
-        self.src, self.dst = (
-            packet.ip.src + ':' + packet.tcp.srcport,
-            packet.ip.dst + ':' + packet.tcp.dstport
-        )
-
     def create_diagram(self, pkts, output_filename):
         init_state = TCPState('START', None, None, None, None, None)
         self.transitions.append(Transition(None, init_state.idx, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         for i, pkt in enumerate(pkts):
+            if 'tcp' not in pkt:
+                continue
+
             if 'ip' not in pkt or 'tcp' not in pkt:
                 continue
 
@@ -85,11 +81,6 @@ class TCPStateDiagram(Diagram):
 
             if 'SYN' in flags and not 'ACK' in flags:
                 # SYN - connection opening requested
-                # self.trx[self.src] = TCPTransciever(self.src, UMLStateDiagram.ARROW_DIR_RIGHT)
-                # self.trx[self.src].states.append(closed_state)
-
-                # self.trx[self.dst] = TCPTransciever(self.dst, UMLStateDiagram.ARROW_DIR_LEFT)
-                # self.trx[self.dst].states.append(closed_state)
 
                 new_src_state = TCPState(self.src, 'SYN sent', None, flags, pkt.tcp.seq_raw, pkt.tcp.ack_raw)
                 new_dst_state = TCPState(self.dst, 'SYN recv', None, flags, pkt.tcp.seq_raw, pkt.tcp.ack_raw)
@@ -150,9 +141,9 @@ class TCPStateDiagram(Diagram):
 
                     established_state = State('ESTABLISHED', None, None)
 
-                    self.transitions.append(Transition(self.trx[self.src].states[-1].idx, established_state.idx, str(i),
+                    self.transitions.append(Transition(self.trx[self.src].states[-1].idx, established_state.idx, None,
                                                        UMLStateDiagram.ARROW_DIR_DOWN))
-                    self.transitions.append(Transition(self.trx[self.dst].states[-1].idx, established_state.idx, str(i),
+                    self.transitions.append(Transition(self.trx[self.dst].states[-1].idx, established_state.idx, None,
                                                        UMLStateDiagram.ARROW_DIR_DOWN))
 
                     self.trx[self.src].states.append(established_state)
@@ -174,17 +165,17 @@ class TCPStateDiagram(Diagram):
 
         if len(self.trx[self.src].states) and len(self.trx[self.dst].states):
             self.transitions.append(
-                Transition(self.trx[self.src].states[-1].idx, None, str(i), UMLStateDiagram.ARROW_DIR_DOWN))
+                Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
             self.transitions.append(
-                Transition(self.trx[self.dst].states[-1].idx, None, str(i), UMLStateDiagram.ARROW_DIR_DOWN))
+                Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         states = []
         for entity in self.trx.values():
             for state in entity.states:
                 states.append(state)
 
-        self.save_diagram_data(states, self.transitions, output_filename)
-        self.generate_diagram(states, self.transitions, output_filename)
+        save_diagram_data(states, self.transitions, output_filename)
+        generate_diagram(states, self.transitions, output_filename)
 
     def recreate_diagram(self, data, hook, output_filename):
         raw_states = data['states']

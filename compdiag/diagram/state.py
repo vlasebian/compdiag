@@ -20,8 +20,11 @@ class State():
         self.idx = str(State.max_idx)
         State.max_idx += 1
 
+    @staticmethod
+    def reset_idx():
+        State.max_idx = 0
+
     def get_name(self):
-        #return self.name
         return self.idx + '| ' + self.name
 
     def get_info(self):
