@@ -136,7 +136,7 @@ class Reconstruct():
 
         for no in state_no:
             state = Reconstruct.get_state(no, states)
-            final_state.info += '\\n' + state.info
+            final_state.info += '\\n' + state.get_info()
 
         states, transitions = Reconstruct.remove_states(state_no, states, transitions)
 

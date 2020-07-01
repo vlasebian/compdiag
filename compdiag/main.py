@@ -1,5 +1,4 @@
 import json
-import time
 import argparse
 import pyshark
 
@@ -20,9 +19,6 @@ from compdiag.reply.reply import reply
 from scapy.sendrecv import AsyncSniffer
 from scapy.utils import wrpcap
 
-MAX_SNIFFING_TIME = 10000
-
-
 class Compdiag:
 
     def __init__(self):
@@ -40,6 +36,7 @@ class Compdiag:
 
     @staticmethod
     def build_diagram(file, protocol, output_filename=None, display_filter=None):
+        print('Building diagram...')
         pkts = Compdiag.pkt_parser(file, display_filter)
 
         if not output_filename:
@@ -69,6 +66,7 @@ class Compdiag:
         pkts.close()
         State.reset_idx()
         Transition.reset_idx()
+        print('Done.')
 
     @staticmethod
     def rebuild_diagram(file, modifier=None, output_filename='reconsdiag'):
@@ -91,19 +89,19 @@ class Compdiag:
 
         arg_parser.add_argument(
             '--reply', metavar='reply', type=bool, default=False,
-            help='Use the packet capture to build replies, and listen for incoming packets.')
+            help='Use the packet capture to build replies and send them to a server.')
 
         arg_parser.add_argument(
             '--ip', metavar='ip', type=str,
-            help='IP of reply target server.')
+            help='IP of reply target server. To be used only with --reply option.')
 
         arg_parser.add_argument(
             '--port', metavar='port', type=str,
-            help='Port of reply target server.')
+            help='Port of reply target server. To be used only with --reply option.')
 
         arg_parser.add_argument(
             '--iface', metavar='iface', type=str, default='lo',
-            help='Interface where replies are sent. To be used only with --reply option.')
+            help='Interface where replies are sent. To be used only with --reply or --capture options.')
 
         arg_parser.add_argument(
             'protocol', metavar='protocol', type=str,
