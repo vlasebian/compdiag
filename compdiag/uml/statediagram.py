@@ -1,14 +1,10 @@
-from compdiag.uml.util import nl
 from compdiag.uml.diagram import UMLDiagram
 
+
 class UMLStateDiagram(UMLDiagram):
-    # ARROW_DIR_DOWN  = ' -down-> '
-    # ARROW_DIR_UP    = ' -up-> '
-    # ARROW_DIR_LEFT  = ' -left[#blue,dashed]-> '
-    # ARROW_DIR_RIGHT = ' -right[#blue,dashed]-> '
-    ARROW_DIR_DOWN  = ' -down[#blue,dashed]-> '
-    ARROW_DIR_UP    = ' -up[#blue,dashed]-> '
-    ARROW_DIR_LEFT  = ' -left-> '
+    ARROW_DIR_DOWN = ' -down[#blue,dashed]-> '
+    ARROW_DIR_UP = ' -up[#blue,dashed]-> '
+    ARROW_DIR_LEFT = ' -left-> '
     ARROW_DIR_RIGHT = ' -right-> '
 
     def __init__(self):
@@ -22,13 +18,12 @@ class UMLStateDiagram(UMLDiagram):
             'wrapWidth': '256',
             'maxMessageSize': '256',
             'defaultTextAlignment': 'center',
-            #'linetype': 'ortho',
         })
 
     @UMLDiagram.uml_statement
     def add_transition(self, src, dst, operation=None, arrow=None):
         if not src and not dst:
-            return None 
+            return None
 
         if not src: src = '[*]'
         if not dst: dst = '[*]'
@@ -52,4 +47,3 @@ class UMLStateDiagram(UMLDiagram):
         if note:
             return state + ' : ' + note
         return None
-

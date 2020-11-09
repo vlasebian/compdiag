@@ -1,12 +1,9 @@
-import json
-
-from compdiag.uml.statediagram import UMLStateDiagram
 from compdiag.diagram.basediagram import Diagram, generate_diagram, save_diagram_data
-from compdiag.diagram.transciever import Transciever
-from compdiag.diagram.state import State
-from compdiag.diagram.transition import Transition
-
 from compdiag.diagram.ble.bleutils import *
+from compdiag.diagram.state import State
+from compdiag.diagram.transciever import Transciever
+from compdiag.diagram.transition import Transition
+from compdiag.uml.statediagram import UMLStateDiagram
 
 
 class BLEStateDiagram(Diagram):
@@ -93,8 +90,10 @@ class BLEStateDiagram(Diagram):
                                                self.trx[self.src].arrow))
 
         if len(self.trx[self.src].states) and len(self.trx[self.dst].states):
-            self.transitions.append(Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
-            self.transitions.append(Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(
+                Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(
+                Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         states = []
         for entity in self.trx.values():
@@ -157,7 +156,8 @@ class BLEStateDiagram(Diagram):
                                                UMLStateDiagram.ARROW_DIR_DOWN))
 
         if len(self.trx['remote'].states):
-            self.transitions.append(Transition(self.trx['remote'].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(
+                Transition(self.trx['remote'].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         return self.trx['remote'].states, self.transitions
 
@@ -220,7 +220,7 @@ class BLEStateDiagram(Diagram):
                     opcode == ATTOpcode.WriteCommand):
                 # A write is only part of the transition, does not create a state.
                 if payload is not None:
-                    #transition += ' ' + payload + '\\n' if len(payload) < 24 else payload[:24] + '...\\n'
+                    # transition += ' ' + payload + '\\n' if len(payload) < 24 else payload[:24] + '...\\n'
                     transition += ' ' + payload + '\\n'
                 continue
 

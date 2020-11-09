@@ -10,6 +10,7 @@ def bytesToHexString(bArr):
 
     return hex_str
 
+
 def nl(line):
     """
     Add '\n' to a string. Every PlantUML statement needs to have a newline
@@ -17,9 +18,9 @@ def nl(line):
     """
     return line + '\n'
 
+
 def enl(line):
     """
     Add escaped '\n' to a string. Useful when adding extra information.
     """
     return line + '\\n'
-

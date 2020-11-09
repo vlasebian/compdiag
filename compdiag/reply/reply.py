@@ -1,12 +1,9 @@
-import time
-import socket
 import hashlib
-
 from threading import Thread, Event
 
+from scapy.layers.inet import *
 from scapy.packet import Raw
 from scapy.sendrecv import sniff
-from scapy.layers.inet import *
 from scapy.utils import wrpcap
 
 BUFSIZ = 1024
@@ -101,17 +98,11 @@ class Reply:
 
                 if server_data is not None:
                     response_key = server_data
-                    # if response_key in pkts.keys():
-                    # print('Something is weird')
-                    # raise ValueError('Duplicate hash in packet dictionary.')
                     pkts[response_key] = [pkt[Raw].load]
 
                 server_data = None
 
             lastsrc, lastdst = src, dst
-
-        # print(self.send_first)
-        # print(pkts)
 
         return pkts
 

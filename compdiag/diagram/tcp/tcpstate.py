@@ -134,7 +134,6 @@ class TCPStateDiagram(Diagram):
                 # ACK connection established
                 if (self.trx[self.src].states[-1].has_flags(['SYN', 'ACK']) and
                         self.trx[self.dst].states[-1].has_flags(['SYN', 'ACK'])):
-
                     ack_sent = TCPState(self.src, 'ACK sent', None, flags, pkt.tcp.seq_raw, pkt.tcp.ack_raw)
                     ack_recv = TCPState(self.dst, 'ACK recv', None, flags, pkt.tcp.seq_raw, pkt.tcp.ack_raw)
                     self.add_standard_transition(ack_sent, ack_recv, 'ACK', i)
@@ -150,17 +149,8 @@ class TCPStateDiagram(Diagram):
                     self.trx[self.dst].states.append(established_state)
 
                     continue
-
-                # Simple ACK, shown only if requested explicitly.
-                # elif False:
-                #     # FIXME: ACK message received
-                #     ack_sent = TCPState(self.src, 'ACK sent', None, flags, pkt.tcp.seq_raw, pkt.tcp.ack_raw)
-                #     ack_recv = TCPState(self.dst, 'ACK recv', None, flags, pkt.tcp.seq_raw, pkt.tcp.ack_raw)
-                #     self.add_standard_transition(ack_sent, ack_recv, 'ACK', i)
-                #     continue
             else:
                 pkt.tcp.pretty_print()
-                # TODO: handle RST packets
                 raise ValueError('Unrecognized TCP packet type.')
 
         if len(self.trx[self.src].states) and len(self.trx[self.dst].states):

@@ -1,10 +1,9 @@
-import json
-
-from compdiag.uml.statediagram import UMLStateDiagram
 from compdiag.diagram.basediagram import Diagram, save_diagram_data, generate_diagram
-from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.state import State
+from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.transition import Transition
+from compdiag.uml.statediagram import UMLStateDiagram
+
 
 class DNSStateDiagram(Diagram):
     def create_diagram(self, pkts, output_filename):
@@ -22,7 +21,7 @@ class DNSStateDiagram(Diagram):
             if self.src not in self.trx.keys():
                 self.trx[self.src] = Transciever(self.src, UMLStateDiagram.ARROW_DIR_RIGHT)
                 self.trx[self.src].states.append(init_state)
-            
+
             if self.dst not in self.trx.keys():
                 self.trx[self.dst] = Transciever(self.dst, UMLStateDiagram.ARROW_DIR_LEFT)
                 self.trx[self.dst].states.append(init_state)
@@ -84,8 +83,10 @@ class DNSStateDiagram(Diagram):
                                                self.trx[self.src].arrow))
 
         if len(self.trx[self.src].states) and len(self.trx[self.dst].states):
-            self.transitions.append(Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
-            self.transitions.append(Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(
+                Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(
+                Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         states = []
         for entity in self.trx.values():
@@ -94,7 +95,6 @@ class DNSStateDiagram(Diagram):
 
         save_diagram_data(states, self.transitions, output_filename)
         generate_diagram(states, self.transitions, output_filename)
-    
+
     def is_query(self, pkt):
         return pkt.dns.flags_response == '0'
-

@@ -5,7 +5,8 @@ from compdiag.uml.util import nl
 
 PLANT_UML_JAR = '/usr/local/bin/plantuml.jar'
 
-class UMLDiagram():
+
+class UMLDiagram:
     """ 
     Base class for UML Diagram classes. Diagrams are written using PlantUML
     language and generated using plantuml.jar (Java installation is required).
@@ -25,15 +26,15 @@ class UMLDiagram():
         # concrete classes that implement this interface. All values should
         # be strings.
         self.__properties = {
-            #'scale': '1.5',
-            #'scale': '1024 width',
-            #'scale': '768 height',
+            # 'scale': '1.5',
+            # 'scale': '1024 width',
+            # 'scale': '768 height',
         }
 
         # General style statements. Same rules as above.
         self.__skinparam = {
             'shadowing': 'False',
-            #'defaultFontName': 'Courier',
+            # 'defaultFontName': 'Courier',
         }
 
     def get_source(self):
@@ -60,7 +61,7 @@ class UMLDiagram():
 
         for key, value in self.__properties.items():
             if value: configuration += nl(key + ' ' + value)
-        
+
         for key, value in self.__skinparam.items():
             if value: configuration += nl('skinparam' + ' ' + key + ' ' + value)
 
@@ -78,7 +79,7 @@ class UMLDiagram():
         """ Set diagram title. """
 
         self.__properties['title'] = title
-    
+
     def add_raw_uml(self, line):
         self.__uml += nl(line)
 
@@ -87,13 +88,15 @@ class UMLDiagram():
         Decorator used for defining methods that represent a PlantUML
         statement. Appends the statement to diagram source.
         """
+
         def uml_command_decorator(self, *args, **kwargs):
             line = statement(self, *args, **kwargs)
             if line:
                 self.__uml += nl(line)
+
         return uml_command_decorator
 
-    def create_diagram(self, output_filename = 'out', output_format = 'png'):
+    def create_diagram(self, output_filename='out', output_format='png'):
         """
         Create a diagram by calling plantuml.jar. Returns True on success, else
         False.
@@ -118,15 +121,14 @@ class UMLDiagram():
             '-nbthread auto',
             '-DPLANTUML_LIMIT_SIZE=8192',
             '-pipe',
-            ],
+        ],
             stdout=subprocess.PIPE,
             input=bytes(self.get_source(), encoding='utf-8'),
             check=True
-            )
+        )
 
         if ret.returncode != 0:
             return False
 
         with open(output_filename[:output_filename.rfind('.')] + '.' + output_format, 'wb') as f:
             f.write(ret.stdout)
-

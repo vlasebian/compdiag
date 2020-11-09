@@ -1,8 +1,8 @@
-class State():
+class State:
     max_idx = 0
 
     def __init__(self, name, info, data, idx=None):
-        self.idx  = idx
+        self.idx = idx
         self.name = name
         self.info = info
         self.data = data
@@ -35,11 +35,10 @@ class State():
 
     def get_dict(self):
         return {
-            'idx' : self.idx,
+            'idx': self.idx,
             'name': self.name,
             'info': self.info,
             'data': self.data,
         }
 
     # TODO: implement __str__() method
-

@@ -1,11 +1,8 @@
-import json
-
-from compdiag.uml.statediagram import UMLStateDiagram
 from compdiag.diagram.basediagram import Diagram, save_diagram_data, generate_diagram
-
-from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.state import State
+from compdiag.diagram.transciever import Transciever
 from compdiag.diagram.transition import Transition
+from compdiag.uml.statediagram import UMLStateDiagram
 
 
 class HTTPStateDiagram(Diagram):
@@ -23,21 +20,21 @@ class HTTPStateDiagram(Diagram):
             if self.src not in self.trx.keys():
                 self.trx[self.src] = Transciever(self.src, UMLStateDiagram.ARROW_DIR_RIGHT)
                 self.trx[self.src].states.append(init_state)
-            
+
             if self.dst not in self.trx.keys():
                 self.trx[self.dst] = Transciever(self.dst, UMLStateDiagram.ARROW_DIR_LEFT)
                 self.trx[self.dst].states.append(init_state)
 
-            operation  = None
+            operation = None
             transition = ''
 
             if 'request' in pkt.http.field_names:
-                operation = pkt.http.request_method 
+                operation = pkt.http.request_method
                 transition += pkt.http.request_method + ' Request to ' + pkt.http.host
 
             elif 'response' in pkt.http.field_names:
                 operation = 'Response'
-                transition += pkt.http.response_version
+                transition += pkt.http.response_code + ' ' + pkt.http.response_code_desc
 
             else:
                 pkt.pretty_print()
@@ -75,8 +72,10 @@ class HTTPStateDiagram(Diagram):
                                                self.trx[self.src].arrow))
 
         if len(self.trx[self.src].states) and len(self.trx[self.dst].states):
-            self.transitions.append(Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
-            self.transitions.append(Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(
+                Transition(self.trx[self.src].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
+            self.transitions.append(
+                Transition(self.trx[self.dst].states[-1].idx, None, None, UMLStateDiagram.ARROW_DIR_DOWN))
 
         states = []
         for entity in self.trx.values():

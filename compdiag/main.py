@@ -1,23 +1,23 @@
-import json
 import argparse
-import pyshark
-
+import json
 import signal
 from threading import Event
 
+import pyshark
+from scapy.sendrecv import AsyncSniffer
+from scapy.utils import wrpcap
+
 from compdiag.diagram.basediagram import recreate_diagram
+from compdiag.diagram.ble.blestate import BLEStateDiagram
+from compdiag.diagram.dns.dnsstate import DNSStateDiagram
+from compdiag.diagram.http.httpstate import HTTPStateDiagram
+from compdiag.diagram.http2.http2state import HTTP2StateDiagram
 from compdiag.diagram.state import State
 from compdiag.diagram.tcp.tcpstate import TCPStateDiagram
 from compdiag.diagram.transition import Transition
 from compdiag.diagram.udp.udpstate import UDPStateDiagram
-from compdiag.diagram.dns.dnsstate import DNSStateDiagram
-from compdiag.diagram.http.httpstate import HTTPStateDiagram
-from compdiag.diagram.http2.http2state import HTTP2StateDiagram
-from compdiag.diagram.ble.blestate import BLEStateDiagram
 from compdiag.reply.reply import reply
 
-from scapy.sendrecv import AsyncSniffer
-from scapy.utils import wrpcap
 
 class Compdiag:
 
@@ -114,7 +114,6 @@ class Compdiag:
 
         args = arg_parser.parse_args()
 
-        # TODO: add the other options too
         if args.reply:
             Compdiag.reply(args.protocol, args.file, args.iface, args.ip, args.port)
             return
